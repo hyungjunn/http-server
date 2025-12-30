@@ -7,7 +7,7 @@ public class MyHttpResponseTest {
 
     @Test
     void toText() {
-        MyHttpResponse response = new MyHttpResponse(200, "OK", "<html>Hello</html>");
+        MyHttpResponse response = new MyHttpResponse(HttpStatus.OK, "<html>Hello</html>");
 
         String text = response.toText();
 
