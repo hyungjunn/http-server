@@ -14,7 +14,8 @@ public class MyHttpHandler {
 
         String path = request.getPath();
         if (fileReader.exists(path)) {
-            return MyHttpResponse.ok(fileReader.read(path));
+            MimeType mimeType = MimeType.fromPath(path);
+            return MyHttpResponse.ok(fileReader.read(path), mimeType);
         }
         return MyHttpResponse.notFound();
     }
