@@ -5,10 +5,13 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class MyHttpServer {
+    private final ExecutorService executorService = Executors.newFixedThreadPool(10);
     private final int port;
     private final MyHttpHandler handler;
 
@@ -22,7 +25,7 @@ public class MyHttpServer {
             System.out.println("Server started on port " + port);
             while (true) {
                 Socket client = serverSocket.accept();
-                handleClient(client);
+                executorService.submit(() -> handleClient(client));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -34,6 +37,7 @@ public class MyHttpServer {
              BufferedReader br = new BufferedReader(new InputStreamReader(client.getInputStream()));
              OutputStream os = client.getOutputStream()
         ) {
+            Thread.sleep(5000); // 인위적인 지연 추가
             String requestLine = br.readLine();
             MyHttpRequest request = MyHttpRequest.from(requestLine);
             MyHttpResponse response = handler.handle(request);
