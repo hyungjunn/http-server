@@ -37,7 +37,6 @@ public class MyHttpServer {
              BufferedReader br = new BufferedReader(new InputStreamReader(client.getInputStream()));
              OutputStream os = client.getOutputStream()
         ) {
-            Thread.sleep(5000); // 인위적인 지연 추가
             String requestLine = br.readLine();
             MyHttpRequest request = MyHttpRequest.from(requestLine);
             MyHttpResponse response = handler.handle(request);
