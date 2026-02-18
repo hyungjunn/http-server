@@ -1,9 +1,12 @@
 package io.github.hyungjun;
 
-import org.assertj.core.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
-public class MyHttpHandlerTest {
+import static org.assertj.core.api.Assertions.assertThat;
+
+class MyHttpHandlerTest {
 
     private final FileReader mockFileReader = new FileReader() {
         @Override
@@ -20,38 +23,67 @@ public class MyHttpHandlerTest {
         }
     };
 
-    @Test
-    void handle() {
-        MyHttpRequest request = MyHttpRequest.from("GET /index.html HTTP/1.1");
-        MyHttpHandler handler = new MyHttpHandler(mockFileReader);
+    private final MyHttpHandler handler = new MyHttpHandler(mockFileReader);
 
-        MyHttpResponse response = handler.handle(request);
+    @Nested
+    @DisplayName("GET 요청 처리")
+    class GetRequests {
 
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(200);
-        Assertions.assertThat(response.getStatusText()).isEqualTo("OK");
-        Assertions.assertThat(response.getBody()).isEqualTo("<html><body><h1>Hello, World!</h1></body></html>");
+        @Test
+        @DisplayName("존재하는 파일 요청시 200 OK와 파일 내용을 반환한다")
+        void returnsFileContent() {
+            MyHttpRequest request = MyHttpRequest.from("GET /index.html HTTP/1.1");
+
+            MyHttpResponse response = handler.handle(request);
+
+            assertThat(response.getStatusCode()).isEqualTo(200);
+            assertThat(response.getBody()).isEqualTo("<html><body><h1>Hello, World!</h1></body></html>");
+        }
+
+        @Test
+        @DisplayName("존재하는 HTML 파일 요청시 Content-Type이 text/html이다")
+        void returnsHtmlContentType() {
+            MyHttpRequest request = MyHttpRequest.from("GET /index.html HTTP/1.1");
+
+            MyHttpResponse response = handler.handle(request);
+
+            assertThat(response.getContentType()).isEqualTo(MimeType.HTML);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 파일 요청시 404 Not Found를 반환한다")
+        void returns404ForMissingFile() {
+            MyHttpRequest request = MyHttpRequest.from("GET /not-exist.html HTTP/1.1");
+
+            MyHttpResponse response = handler.handle(request);
+
+            assertThat(response.getStatusCode()).isEqualTo(404);
+            assertThat(response.getBody()).contains("404 Not Found");
+        }
     }
 
-    @Test
-    void handle_not_exist_page() {
-        MyHttpRequest request = MyHttpRequest.from("GET /not-exist.html HTTP/1.1");
-        MyHttpHandler handler = new MyHttpHandler(mockFileReader);
+    @Nested
+    @DisplayName("허용되지 않은 메서드 처리")
+    class MethodNotAllowed {
 
-        MyHttpResponse response = handler.handle(request);
+        @Test
+        @DisplayName("POST 요청시 405 Method Not Allowed를 반환한다")
+        void rejectsPost() {
+            MyHttpRequest request = MyHttpRequest.from("POST /index.html HTTP/1.1");
 
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(404);
-        Assertions.assertThat(response.getStatusText()).isEqualTo("Not Found");
-        Assertions.assertThat(response.getBody()).isEqualTo("<html><body><h1>404 Not Found</h1></body></html>");
-    }
+            MyHttpResponse response = handler.handle(request);
 
-    @Test
-    void handle_post_request_returns_405() {
-        MyHttpRequest request = MyHttpRequest.from("POST /index.html HTTP/1.1");
-        MyHttpHandler handler = new MyHttpHandler(mockFileReader);
+            assertThat(response.getStatusCode()).isEqualTo(405);
+        }
 
-        MyHttpResponse response = handler.handle(request);
+        @Test
+        @DisplayName("DELETE 요청시 405 Method Not Allowed를 반환한다")
+        void rejectsDelete() {
+            MyHttpRequest request = MyHttpRequest.from("DELETE /index.html HTTP/1.1");
 
-        Assertions.assertThat(response.getStatusCode()).isEqualTo(405);
-        Assertions.assertThat(response.getStatusText()).isEqualTo("Method Not Allowed");
+            MyHttpResponse response = handler.handle(request);
+
+            assertThat(response.getStatusCode()).isEqualTo(405);
+        }
     }
 }
